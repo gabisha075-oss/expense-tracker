@@ -1,0 +1,541 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Dashboard - Expense Tracker{% endblock %}
+
+{% block content %}
+<div class="dashboard">
+    <!-- Header with Quote -->
+    {% if quote %}
+    <section class="quote-section">
+        <div class="quote-card">
+            <span class="quote-emoji">{{ quote.emoji }}</span>
+            <p class="quote-text">"{{ quote.quote }}"</p>
+            {% if quote.author %}
+            <p class="quote-author">— {{ quote.author }}</p>
+            {% endif %}
+        </div>
+    </section>
+    {% endif %}
+
+    <!-- Summary Cards -->
+    <section class="summary-section">
+        <div class="summary-cards-container">
+            <div class="summary-card card-income">
+                <div class="card-icon">💵</div>
+                <div class="card-content">
+                    <div class="card-label">Total Income</div>
+                    <div class="card-amount">${{ total_income }}</div>
+                    <div class="card-period">This Month</div>
+                </div>
+            </div>
+
+            <div class="summary-card card-expense">
+                <div class="card-icon">💸</div>
+                <div class="card-content">
+                    <div class="card-label">Total Expense</div>
+                    <div class="card-amount">${{ total_expense }}</div>
+                    <div class="card-period">This Month</div>
+                </div>
+            </div>
+
+            <div class="summary-card card-balance {% if balance >= 0 %}positive{% else %}negative{% endif %}">
+                <div class="card-icon">🎯</div>
+                <div class="card-content">
+                    <div class="card-label">Balance</div>
+                    <div class="card-amount">${{ balance }}</div>
+                    <div class="card-period">Income - Expense</div>
+                </div>
+            </div>
+
+            <div class="summary-card card-today">
+                <div class="card-icon">🔔</div>
+                <div class="card-content">
+                    <div class="card-label">Today</div>
+                    <div class="card-amount">
+                        <span class="today-income">+${{ today_income }}</span>
+                        <span class="today-expense">-${{ today_expense }}</span>
+                    </div>
+                    <div class="card-period">Today's Activity</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Content -->
+    <section class="main-dashboard">
+        <div class="dashboard-grid">
+            <!-- Expense by Category -->
+            <div class="dashboard-card">
+                <div class="card-header">
+                    <h2>Expense Breakdown</h2>
+                    <a href="{% url 'reports' %}" class="view-all">View Report</a>
+                </div>
+                <div class="expense-list">
+                    {% if expense_by_category %}
+                        {% for exp in expense_by_category %}
+                        <div class="expense-item">
+                            <div class="expense-info">
+                                <span class="emoji">{{ exp.category__emoji }}</span>
+                                <span class="name">{{ exp.category__name }}</span>
+                            </div>
+                            <div class="expense-bar">
+                                <div class="bar-fill" style="width: {% widthratio exp.total total_expense 100 %}%; background-color: {{ exp.category__color }};"></div>
+                            </div>
+                            <span class="amount">${{ exp.total }}</span>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="no-data">No expenses this month</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="dashboard-card">
+                <div class="card-header">
+                    <h2>Quick Actions</h2>
+                </div>
+                <div class="quick-actions">
+                    <a href="{% url 'add_income' %}" class="action-btn action-income">
+                        <span class="icon">💰</span>
+                        <span>Add Income</span>
+                    </a>
+                    <a href="{% url 'add_expense' %}" class="action-btn action-expense">
+                        <span class="icon">💳</span>
+                        <span>Add Expense</span>
+                    </a>
+                    <a href="{% url 'budgets' %}" class="action-btn action-budget">
+                        <span class="icon">📊</span>
+                        <span>Set Budget</span>
+                    </a>
+                    <a href="{% url 'reports' %}" class="action-btn action-report">
+                        <span class="icon">📈</span>
+                        <span>View Reports</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Transactions -->
+        <div class="transactions-section">
+            <h2>Recent Transactions</h2>
+            <div class="transactions-grid">
+                <!-- Recent Incomes -->
+                <div class="transactions-column">
+                    <h3>📥 Recent Income</h3>
+                    {% if recent_incomes %}
+                        <ul class="transaction-list">
+                            {% for income in recent_incomes %}
+                            <li class="transaction-item income">
+                                <div class="transaction-emoji">{{ income.category.emoji }}</div>
+                                <div class="transaction-details">
+                                    <div class="transaction-name">{{ income.category.name }}</div>
+                                    <div class="transaction-date">{{ income.date|date:"M d, Y" }}</div>
+                                </div>
+                                <div class="transaction-amount positive">+${{ income.amount }}</div>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <p class="no-data">No income yet</p>
+                    {% endif %}
+                </div>
+
+                <!-- Recent Expenses -->
+                <div class="transactions-column">
+                    <h3>📤 Recent Expense</h3>
+                    {% if recent_expenses %}
+                        <ul class="transaction-list">
+                            {% for expense in recent_expenses %}
+                            <li class="transaction-item expense">
+                                <div class="transaction-emoji">{{ expense.category.emoji }}</div>
+                                <div class="transaction-details">
+                                    <div class="transaction-name">{{ expense.category.name }}</div>
+                                    <div class="transaction-date">{{ expense.date|date:"M d, Y" }}</div>
+                                </div>
+                                <div class="transaction-amount negative">-${{ expense.amount }}</div>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <p class="no-data">No expenses yet</p>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="view-all-link">
+                <a href="{% url 'transactions' %}" class="btn btn-secondary">View All Transactions</a>
+            </div>
+        </div>
+    </section>
+</div>
+
+<style>
+    .quote-section {
+        margin-bottom: 30px;
+    }
+
+    .quote-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 30px;
+        border-radius: 15px;
+        text-align: center;
+        animation: fadeIn 0.6s ease-out;
+    }
+
+    .quote-emoji {
+        font-size: 40px;
+        display: block;
+        margin-bottom: 15px;
+    }
+
+    .quote-text {
+        font-size: 18px;
+        font-style: italic;
+        margin-bottom: 10px;
+        line-height: 1.5;
+    }
+
+    .quote-author {
+        font-size: 14px;
+        opacity: 0.9;
+    }
+
+    .summary-section {
+        margin-bottom: 40px;
+    }
+
+    .summary-cards-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 20px;
+    }
+
+    .summary-card {
+        background: white;
+        padding: 25px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+        transition: transform 0.3s, box-shadow 0.3s;
+        animation: slideInUp 0.6s ease-out;
+    }
+
+    .summary-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+    }
+
+    .card-icon {
+        font-size: 40px;
+        flex-shrink: 0;
+    }
+
+    .card-content {
+        flex: 1;
+    }
+
+    .card-label {
+        font-size: 13px;
+        color: #7f8c8d;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .card-amount {
+        font-size: 28px;
+        font-weight: bold;
+        color: #2c3e50;
+        margin: 5px 0;
+    }
+
+    .card-period {
+        font-size: 12px;
+        color: #95a5a6;
+    }
+
+    .card-income .card-label { color: #27ae60; }
+    .card-expense .card-label { color: #e74c3c; }
+    .card-balance .card-label { color: #667eea; }
+    .card-today .card-label { color: #f39c12; }
+
+    .card-income .card-amount { color: #27ae60; }
+    .card-expense .card-amount { color: #e74c3c; }
+    .card-balance.positive .card-amount { color: #27ae60; }
+    .card-balance.negative .card-amount { color: #e74c3c; }
+
+    .card-today .card-amount {
+        display: flex;
+        flex-direction: column;
+        font-size: 20px;
+        gap: 5px;
+    }
+
+    .today-income { color: #27ae60; }
+    .today-expense { color: #e74c3c; }
+
+    .main-dashboard {
+        margin-bottom: 40px;
+    }
+
+    .dashboard-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 25px;
+        margin-bottom: 30px;
+    }
+
+    .dashboard-card {
+        background: white;
+        border-radius: 12px;
+        padding: 25px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+        animation: fadeIn 0.6s ease-out 0.2s both;
+    }
+
+    .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid #ecf0f1;
+    }
+
+    .card-header h2 {
+        margin: 0;
+        color: #2c3e50;
+        font-size: 18px;
+    }
+
+    .view-all {
+        color: #667eea;
+        text-decoration: none;
+        font-size: 13px;
+        font-weight: 600;
+        transition: color 0.3s;
+    }
+
+    .view-all:hover {
+        color: #764ba2;
+    }
+
+    .expense-list {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .expense-item {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        animation: fadeIn 0.6s ease-out;
+    }
+
+    .expense-info {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        min-width: 150px;
+    }
+
+    .expense-info .emoji {
+        font-size: 24px;
+    }
+
+    .expense-info .name {
+        font-size: 14px;
+        color: #2c3e50;
+        font-weight: 600;
+    }
+
+    .expense-bar {
+        flex: 1;
+        height: 8px;
+        background: #ecf0f1;
+        border-radius: 4px;
+        overflow: hidden;
+    }
+
+    .bar-fill {
+        height: 100%;
+        transition: width 0.3s ease-out;
+    }
+
+    .expense-item .amount {
+        font-weight: 600;
+        color: #2c3e50;
+        min-width: 70px;
+        text-align: right;
+    }
+
+    .quick-actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+    }
+
+    .action-btn {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        border-radius: 10px;
+        text-decoration: none;
+        color: white;
+        font-size: 12px;
+        font-weight: 600;
+        transition: all 0.3s;
+    }
+
+    .action-income { background: #27ae60; }
+    .action-expense { background: #e74c3c; }
+    .action-budget { background: #667eea; }
+    .action-report { background: #f39c12; }
+
+    .action-btn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    }
+
+    .action-btn .icon {
+        font-size: 28px;
+        margin-bottom: 8px;
+    }
+
+    .transactions-section {
+        background: white;
+        border-radius: 12px;
+        padding: 25px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+        animation: fadeIn 0.6s ease-out 0.4s both;
+    }
+
+    .transactions-section h2 {
+        margin-bottom: 20px;
+        color: #2c3e50;
+    }
+
+    .transactions-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 25px;
+        margin-bottom: 20px;
+    }
+
+    .transactions-column h3 {
+        color: #2c3e50;
+        margin-bottom: 15px;
+        font-size: 16px;
+    }
+
+    .transaction-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .transaction-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px;
+        background: #f8f9fa;
+        border-radius: 8px;
+        transition: all 0.3s;
+    }
+
+    .transaction-item:hover {
+        background: #ecf0f1;
+        transform: translateX(5px);
+    }
+
+    .transaction-emoji {
+        font-size: 24px;
+        flex-shrink: 0;
+    }
+
+    .transaction-details {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .transaction-name {
+        font-weight: 600;
+        color: #2c3e50;
+        margin-bottom: 2px;
+    }
+
+    .transaction-date {
+        font-size: 12px;
+        color: #95a5a6;
+    }
+
+    .transaction-amount {
+        font-weight: 700;
+        font-size: 15px;
+        flex-shrink: 0;
+    }
+
+    .transaction-amount.positive {
+        color: #27ae60;
+    }
+
+    .transaction-amount.negative {
+        color: #e74c3c;
+    }
+
+    .no-data {
+        text-align: center;
+        color: #95a5a6;
+        padding: 30px 0;
+    }
+
+    .view-all-link {
+        text-align: center;
+        padding-top: 15px;
+    }
+
+    @keyframes slideInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+        }
+        to {
+            opacity: 1;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .transactions-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .quick-actions {
+            grid-template-columns: 1fr;
+        }
+
+        .card-amount {
+            font-size: 24px;
+        }
+    }
+</style>
+{% endblock %}

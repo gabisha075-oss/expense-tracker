@@ -1,0 +1,364 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Transactions - Expense Tracker{% endblock %}
+
+{% block content %}
+<div class="transactions-container">
+    <h1>📋 Transactions</h1>
+
+    <!-- Filters -->
+    <div class="filters">
+        <form method="GET" class="filter-form">
+            <div class="filter-group">
+                <label for="type">Type</label>
+                <select name="type" id="type">
+                    <option value="all" {% if transaction_type == 'all' %}selected{% endif %}>All</option>
+                    <option value="income" {% if transaction_type == 'income' %}selected{% endif %}>Income</option>
+                    <option value="expense" {% if transaction_type == 'expense' %}selected{% endif %}>Expense</option>
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label for="category">Category</label>
+                <select name="category" id="category">
+                    <option value="">All Categories</option>
+                    {% for cat in categories %}
+                    <option value="{{ cat.id }}" {% if cat.id|stringformat:"s" == category_filter %}selected{% endif %}>{{ cat.emoji }} {{ cat.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label for="date_from">From</label>
+                <input type="date" name="date_from" id="date_from" value="{{ date_from }}">
+            </div>
+
+            <div class="filter-group">
+                <label for="date_to">To</label>
+                <input type="date" name="date_to" id="date_to" value="{{ date_to }}">
+            </div>
+
+            <button type="submit" class="btn btn-primary">Filter</button>
+            <a href="{% url 'transactions' %}" class="btn btn-secondary">Clear</a>
+        </form>
+    </div>
+
+    <!-- Transactions List -->
+    <div class="transactions-list">
+        {% if transaction_type == 'all' %}
+            <h2>All Transactions</h2>
+            {% if incomes or expenses %}
+                <table class="transactions-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Type</th>
+                            <th>Category</th>
+                            <th>Amount</th>
+                            <th>Description</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for expense in expenses %}
+                        <tr class="expense-row">
+                            <td>{{ expense.date }}</td>
+                            <td><span class="badge badge-expense">Expense</span></td>
+                            <td>{{ expense.category.emoji }} {{ expense.category.name }}</td>
+                            <td class="amount negative">-${{ expense.amount }}</td>
+                            <td>{{ expense.description|truncatewords:5 }}</td>
+                            <td class="actions">
+                                <a href="{% url 'edit_expense' expense.id %}" class="btn-edit">Edit</a>
+                                <a href="{% url 'delete_expense' expense.id %}" class="btn-delete">Delete</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        {% for income in incomes %}
+                        <tr class="income-row">
+                            <td>{{ income.date }}</td>
+                            <td><span class="badge badge-income">Income</span></td>
+                            <td>{{ income.category.emoji }} {{ income.category.name }}</td>
+                            <td class="amount positive">+${{ income.amount }}</td>
+                            <td>{{ income.description|truncatewords:5 }}</td>
+                            <td class="actions">
+                                <a href="{% url 'edit_income' income.id %}" class="btn-edit">Edit</a>
+                                <a href="{% url 'delete_income' income.id %}" class="btn-delete">Delete</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <p class="no-data">No transactions found</p>
+            {% endif %}
+        {% else %}
+            {% if transactions %}
+                <table class="transactions-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Category</th>
+                            <th>Amount</th>
+                            <th>Description</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for trans in transactions %}
+                        <tr>
+                            <td>{{ trans.date }}</td>
+                            <td>{{ trans.category.emoji }} {{ trans.category.name }}</td>
+                            <td class="amount">{% if transaction_type == 'income' %}+{% else %}-{% endif %}${{ trans.amount }}</td>
+                            <td>{{ trans.description|truncatewords:5 }}</td>
+                            <td class="actions">
+                                {% if transaction_type == 'income' %}
+                                    <a href="{% url 'edit_income' trans.id %}" class="btn-edit">Edit</a>
+                                    <a href="{% url 'delete_income' trans.id %}" class="btn-delete">Delete</a>
+                                {% else %}
+                                    <a href="{% url 'edit_expense' trans.id %}" class="btn-edit">Edit</a>
+                                    <a href="{% url 'delete_expense' trans.id %}" class="btn-delete">Delete</a>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                
+                <!-- Pagination -->
+                {% if transactions.has_other_pages %}
+                <div class="pagination">
+                    {% if transactions.has_previous %}
+                        <a href="?page=1" class="page-link">First</a>
+                        <a href="?page={{ transactions.previous_page_number }}" class="page-link">← Previous</a>
+                    {% endif %}
+                    
+                    <span class="page-info">Page {{ transactions.number }} of {{ transactions.paginator.num_pages }}</span>
+                    
+                    {% if transactions.has_next %}
+                        <a href="?page={{ transactions.next_page_number }}" class="page-link">Next →</a>
+                        <a href="?page={{ transactions.paginator.num_pages }}" class="page-link">Last</a>
+                    {% endif %}
+                </div>
+                {% endif %}
+            {% else %}
+                <p class="no-data">No transactions found</p>
+            {% endif %}
+        {% endif %}
+    </div>
+</div>
+
+<style>
+    .transactions-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    h1 {
+        color: #2c3e50;
+        margin-bottom: 30px;
+    }
+
+    .filters {
+        background: white;
+        padding: 20px;
+        border-radius: 12px;
+        margin-bottom: 30px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+    }
+
+    .filter-form {
+        display: flex;
+        gap: 15px;
+        flex-wrap: wrap;
+        align-items: flex-end;
+    }
+
+    .filter-group {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+    }
+
+    .filter-group label {
+        font-weight: 600;
+        color: #2c3e50;
+        font-size: 13px;
+    }
+
+    .filter-group input,
+    .filter-group select {
+        padding: 10px;
+        border: 2px solid #ecf0f1;
+        border-radius: 6px;
+        font-size: 14px;
+        width: 150px;
+    }
+
+    .filter-group input:focus,
+    .filter-group select:focus {
+        outline: none;
+        border-color: #667eea;
+    }
+
+    .transactions-list {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+    }
+
+    .transactions-list h2 {
+        margin-bottom: 20px;
+        color: #2c3e50;
+    }
+
+    .transactions-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .transactions-table thead {
+        background: #f8f9fa;
+        border-bottom: 2px solid #ecf0f1;
+    }
+
+    .transactions-table th {
+        padding: 15px;
+        text-align: left;
+        font-weight: 600;
+        color: #2c3e50;
+        font-size: 14px;
+    }
+
+    .transactions-table td {
+        padding: 15px;
+        border-bottom: 1px solid #ecf0f1;
+    }
+
+    .transactions-table tr:hover {
+        background: #f8f9fa;
+    }
+
+    .badge {
+        display: inline-block;
+        padding: 5px 10px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .badge-income {
+        background: #d4edda;
+        color: #155724;
+    }
+
+    .badge-expense {
+        background: #f8d7da;
+        color: #721c24;
+    }
+
+    .amount {
+        font-weight: 600;
+        font-size: 15px;
+    }
+
+    .amount.positive {
+        color: #27ae60;
+    }
+
+    .amount.negative {
+        color: #e74c3c;
+    }
+
+    .actions {
+        display: flex;
+        gap: 10px;
+    }
+
+    .btn-edit,
+    .btn-delete {
+        padding: 6px 12px;
+        border-radius: 6px;
+        text-decoration: none;
+        font-size: 12px;
+        font-weight: 600;
+        transition: all 0.3s;
+    }
+
+    .btn-edit {
+        background: #667eea;
+        color: white;
+    }
+
+    .btn-edit:hover {
+        background: #764ba2;
+    }
+
+    .btn-delete {
+        background: #e74c3c;
+        color: white;
+    }
+
+    .btn-delete:hover {
+        background: #c0392b;
+    }
+
+    .pagination {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 10px;
+        margin-top: 30px;
+        padding-top: 20px;
+        border-top: 1px solid #ecf0f1;
+    }
+
+    .page-link {
+        padding: 8px 12px;
+        border: 1px solid #ecf0f1;
+        border-radius: 6px;
+        text-decoration: none;
+        color: #667eea;
+        transition: all 0.3s;
+    }
+
+    .page-link:hover {
+        background: #667eea;
+        color: white;
+    }
+
+    .page-info {
+        color: #7f8c8d;
+        font-size: 14px;
+    }
+
+    .no-data {
+        text-align: center;
+        color: #95a5a6;
+        padding: 40px 0;
+        font-size: 16px;
+    }
+
+    @media (max-width: 768px) {
+        .filter-form {
+            flex-direction: column;
+        }
+
+        .filter-group input,
+        .filter-group select {
+            width: 100%;
+        }
+
+        .transactions-table {
+            font-size: 13px;
+        }
+
+        .transactions-table th,
+        .transactions-table td {
+            padding: 10px;
+        }
+    }
+</style>
+{% endblock %}

@@ -1,0 +1,362 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Profile - Expense Tracker{% endblock %}
+
+{% block content %}
+<div class="profile-container">
+    <div class="profile-header">
+        <h1>👤 My Profile</h1>
+    </div>
+
+    <div class="profile-content">
+        <!-- Profile Picture and Basic Info -->
+        <div class="profile-card profile-main">
+            <div class="profile-picture-section">
+                {% if profile.profile_picture %}
+                    <img src="{{ profile.profile_picture.url }}" alt="Profile" class="profile-picture">
+                {% else %}
+                    <div class="profile-picture-placeholder">
+                        <span>{{ user.first_name|first|default:user.username|first|upper }}</span>
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="profile-info">
+                <h2>{{ user.first_name|default:user.username }}</h2>
+                <p class="username">@{{ user.username }}</p>
+                <p class="email">{{ user.email }}</p>
+                <p class="joined">Joined: {{ user.date_joined|date:"M d, Y" }}</p>
+            </div>
+        </div>
+
+        <!-- Edit Profile Form -->
+        <div class="profile-card">
+            <h2>Edit Profile</h2>
+            <form method="POST" enctype="multipart/form-data" class="profile-form">
+                {% csrf_token %}
+                
+                <div class="form-group">
+                    <label for="profile_picture">Profile Picture</label>
+                    <input type="file" id="profile_picture" name="profile_picture" accept="image/*">
+                    <small>Recommended size: 200x200px, Max 5MB</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="phone">Phone Number</label>
+                    <input type="tel" id="phone" name="phone" value="{{ profile.phone }}" placeholder="+1 (555) 123-4567">
+                </div>
+
+                <div class="form-group">
+                    <label for="bio">Bio</label>
+                    <textarea id="bio" name="bio" placeholder="Tell us about yourself..." rows="5">{{ profile.bio }}</textarea>
+                </div>
+
+                <button type="submit" class="btn btn-primary">✓ Save Changes</button>
+            </form>
+        </div>
+
+        <!-- Change Password -->
+        <div class="profile-card">
+            <h2>Change Password</h2>
+            <form id="changePasswordForm" class="profile-form">
+                {% csrf_token %}
+                
+                <div class="form-group">
+                    <label for="old_password">Current Password</label>
+                    <input type="password" id="old_password" name="old_password" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="new_password1">New Password</label>
+                    <input type="password" id="new_password1" name="new_password1" required>
+                    <small>At least 8 characters</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="new_password2">Confirm New Password</label>
+                    <input type="password" id="new_password2" name="new_password2" required>
+                </div>
+
+                <button type="submit" class="btn btn-primary">✓ Update Password</button>
+            </form>
+        </div>
+
+        <!-- Account Settings -->
+        <div class="profile-card">
+            <h2>Account Settings</h2>
+            <div class="settings-list">
+                <div class="setting-item">
+                    <div>
+                        <h3>Email Notifications</h3>
+                        <p>Get notified when budgets are exceeded</p>
+                    </div>
+                    <label class="toggle">
+                        <input type="checkbox" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+
+                <hr>
+
+                <div class="setting-item">
+                    <div>
+                        <h3>Two-Factor Authentication</h3>
+                        <p>Add extra security to your account</p>
+                    </div>
+                    <button class="btn btn-secondary">Enable</button>
+                </div>
+
+                <hr>
+
+                <div class="setting-item danger">
+                    <div>
+                        <h3>Delete Account</h3>
+                        <p>Permanently delete your account and all data</p>
+                    </div>
+                    <button class="btn btn-danger">Delete</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .profile-container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    .profile-header {
+        margin-bottom: 40px;
+    }
+
+    .profile-header h1 {
+        color: #2c3e50;
+    }
+
+    .profile-content {
+        display: flex;
+        flex-direction: column;
+        gap: 25px;
+    }
+
+    .profile-card {
+        background: white;
+        padding: 25px;
+        border-radius: 12px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+        animation: fadeIn 0.6s ease-out;
+    }
+
+    .profile-main {
+        display: flex;
+        align-items: center;
+        gap: 30px;
+    }
+
+    .profile-picture-section {
+        flex-shrink: 0;
+    }
+
+    .profile-picture {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 3px solid #667eea;
+    }
+
+    .profile-picture-placeholder {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 48px;
+        font-weight: bold;
+        border: 3px solid #667eea;
+    }
+
+    .profile-info {
+        flex: 1;
+    }
+
+    .profile-info h2 {
+        margin: 0 0 8px 0;
+        color: #2c3e50;
+    }
+
+    .username {
+        color: #7f8c8d;
+        margin: 0 0 5px 0;
+        font-size: 14px;
+    }
+
+    .email {
+        color: #667eea;
+        margin: 0 0 5px 0;
+        font-size: 14px;
+    }
+
+    .joined {
+        color: #95a5a6;
+        margin: 0;
+        font-size: 13px;
+    }
+
+    .profile-card h2 {
+        color: #2c3e50;
+        margin-bottom: 20px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid #ecf0f1;
+    }
+
+    .profile-form {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .form-group label {
+        font-weight: 600;
+        color: #2c3e50;
+    }
+
+    .form-group input,
+    .form-group textarea {
+        padding: 12px 15px;
+        border: 2px solid #ecf0f1;
+        border-radius: 8px;
+        font-size: 14px;
+        font-family: inherit;
+        transition: border-color 0.3s;
+    }
+
+    .form-group input:focus,
+    .form-group textarea:focus {
+        outline: none;
+        border-color: #667eea;
+    }
+
+    .form-group small {
+        color: #95a5a6;
+        font-size: 12px;
+    }
+
+    .settings-list {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .setting-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 15px 0;
+    }
+
+    .setting-item h3 {
+        margin: 0 0 5px 0;
+        color: #2c3e50;
+        font-size: 16px;
+    }
+
+    .setting-item p {
+        margin: 0;
+        color: #7f8c8d;
+        font-size: 13px;
+    }
+
+    .setting-item.danger {
+        border-top: 2px solid #e74c3c;
+        padding-top: 20px;
+    }
+
+    .toggle {
+        display: flex;
+        cursor: pointer;
+        position: relative;
+        width: 50px;
+    }
+
+    .toggle input {
+        display: none;
+    }
+
+    .slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #ccc;
+        transition: 0.4s;
+        border-radius: 34px;
+    }
+
+    .slider:before {
+        position: absolute;
+        content: "";
+        height: 22px;
+        width: 22px;
+        left: 4px;
+        bottom: 4px;
+        background-color: white;
+        transition: 0.4s;
+        border-radius: 50%;
+    }
+
+    input:checked + .slider {
+        background-color: #27ae60;
+    }
+
+    input:checked + .slider:before {
+        transform: translateX(16px);
+    }
+
+    .btn-danger {
+        background: #e74c3c !important;
+    }
+
+    .btn-danger:hover {
+        background: #c0392b !important;
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @media (max-width: 768px) {
+        .profile-main {
+            flex-direction: column;
+            text-align: center;
+        }
+
+        .setting-item {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 15px;
+        }
+    }
+</style>
+{% endblock %}

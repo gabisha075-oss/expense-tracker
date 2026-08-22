@@ -1,0 +1,262 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Alerts - Expense Tracker{% endblock %}
+
+{% block content %}
+<div class="alerts-container">
+    <h1>🔔 Budget Alerts</h1>
+
+    {% if alerts %}
+        <div class="alerts-list">
+            <form method="POST" class="mark-all-form">
+                {% csrf_token %}
+                <input type="hidden" name="alert_id" value="all">
+                <button type="submit" class="btn btn-secondary">✓ Mark All as Read</button>
+            </form>
+
+            {% for alert in alerts %}
+            <div class="alert-item alert-{{ alert.status }} {% if alert.is_read %}read{% endif %}">
+                <div class="alert-icon">
+                    {% if alert.status == 'critical' %}
+                    🔴
+                    {% else %}
+                    🟡
+                    {% endif %}
+                </div>
+                <div class="alert-content">
+                    <h3>{{ alert.budget.category.name }} Budget Alert</h3>
+                    <p class="alert-message">{{ alert.message }}</p>
+                    <p class="alert-time">{{ alert.created_at|date:"N d, Y \a\t H:i" }}</p>
+                </div>
+                <div class="alert-actions">
+                    {% if not alert.is_read %}
+                    <form method="POST" style="display:inline;">
+                        {% csrf_token %}
+                        <input type="hidden" name="alert_id" value="{{ alert.id }}">
+                        <button type="submit" class="btn btn-link">Mark as Read</button>
+                    </form>
+                    {% else %}
+                    <span class="badge-read">✓ Read</span>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Pagination -->
+        {% if alerts.has_other_pages %}
+        <div class="pagination">
+            {% if alerts.has_previous %}
+                <a href="?page=1" class="page-link">First</a>
+                <a href="?page={{ alerts.previous_page_number }}" class="page-link">← Previous</a>
+            {% endif %}
+            
+            <span class="page-info">Page {{ alerts.number }} of {{ alerts.paginator.num_pages }}</span>
+            
+            {% if alerts.has_next %}
+                <a href="?page={{ alerts.next_page_number }}" class="page-link">Next →</a>
+                <a href="?page={{ alerts.paginator.num_pages }}" class="page-link">Last</a>
+            {% endif %}
+        </div>
+        {% endif %}
+    {% else %}
+        <div class="no-alerts">
+            <div class="empty-state">
+                <div class="empty-icon">✨</div>
+                <h2>All Clear!</h2>
+                <p>You have no budget alerts. Keep tracking your expenses!</p>
+                <a href="{% url 'home' %}" class="btn btn-primary">← Back to Dashboard</a>
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+<style>
+    .alerts-container {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    h1 {
+        color: #2c3e50;
+        margin-bottom: 30px;
+    }
+
+    .mark-all-form {
+        margin-bottom: 20px;
+    }
+
+    .alerts-list {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .alert-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 15px;
+        padding: 20px;
+        border-radius: 12px;
+        background: white;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+        animation: slideInLeft 0.6s ease-out;
+        transition: all 0.3s;
+        border-left: 5px solid;
+    }
+
+    .alert-item:hover {
+        transform: translateX(5px);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+    }
+
+    .alert-item.alert-critical {
+        border-left-color: #e74c3c;
+        background: linear-gradient(135deg, #ffe5e5 0%, #ffb3b3 100%);
+    }
+
+    .alert-item.alert-warning {
+        border-left-color: #f39c12;
+        background: linear-gradient(135deg, #fff4e5 0%, #ffe6b3 100%);
+    }
+
+    .alert-item.read {
+        opacity: 0.6;
+    }
+
+    .alert-icon {
+        font-size: 32px;
+        flex-shrink: 0;
+        line-height: 1;
+    }
+
+    .alert-content {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .alert-content h3 {
+        margin: 0 0 8px 0;
+        color: #2c3e50;
+        font-size: 16px;
+    }
+
+    .alert-message {
+        margin: 0 0 8px 0;
+        color: #34495e;
+        line-height: 1.5;
+    }
+
+    .alert-time {
+        margin: 0;
+        color: #7f8c8d;
+        font-size: 12px;
+    }
+
+    .alert-actions {
+        flex-shrink: 0;
+    }
+
+    .btn-link {
+        background: none;
+        border: none;
+        color: #667eea;
+        cursor: pointer;
+        font-weight: 600;
+        padding: 8px 12px;
+        border-radius: 6px;
+        transition: all 0.3s;
+        text-decoration: none;
+    }
+
+    .btn-link:hover {
+        background: rgba(102, 126, 234, 0.1);
+    }
+
+    .badge-read {
+        display: inline-block;
+        background: #27ae60;
+        color: white;
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .no-alerts {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 400px;
+    }
+
+    .empty-state {
+        text-align: center;
+    }
+
+    .empty-icon {
+        font-size: 60px;
+        margin-bottom: 20px;
+    }
+
+    .empty-state h2 {
+        color: #2c3e50;
+        margin-bottom: 10px;
+    }
+
+    .empty-state p {
+        color: #7f8c8d;
+        margin-bottom: 20px;
+    }
+
+    .pagination {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 10px;
+        margin-top: 30px;
+        flex-wrap: wrap;
+    }
+
+    .page-link {
+        padding: 8px 12px;
+        border: 1px solid #ecf0f1;
+        border-radius: 6px;
+        text-decoration: none;
+        color: #667eea;
+        transition: all 0.3s;
+    }
+
+    .page-link:hover {
+        background: #667eea;
+        color: white;
+    }
+
+    @keyframes slideInLeft {
+        from {
+            opacity: 0;
+            transform: translateX(-30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
+
+    @media (max-width: 768px) {
+        .alert-item {
+            flex-direction: column;
+        }
+
+        .alert-actions {
+            width: 100%;
+        }
+
+        .btn-link {
+            width: 100%;
+        }
+    }
+</style>
+{% endblock %}

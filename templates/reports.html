@@ -1,0 +1,415 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Reports - Expense Tracker{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="reports-container">
+    <h1>📈 Financial Reports</h1>
+
+    <!-- Time Range Filter -->
+    <div class="filter-section">
+        <div class="filter-buttons">
+            <a href="?range=month" class="btn {% if time_range == 'month' %}btn-primary{% else %}btn-secondary{% endif %}">📅 This Month</a>
+            <a href="?range=quarter" class="btn {% if time_range == 'quarter' %}btn-primary{% else %}btn-secondary{% endif %}">📊 This Quarter</a>
+            <a href="?range=year" class="btn {% if time_range == 'year' %}btn-primary{% else %}btn-secondary{% endif %}">📈 This Year</a>
+            <a href="?range=30days" class="btn {% if time_range == '30days' %}btn-primary{% else %}btn-secondary{% endif %}">📉 Last 30 Days</a>
+        </div>
+        <a href="{% url 'download_pdf' %}?range={{ time_range }}" class="btn btn-success">📥 Download PDF</a>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="summary-cards">
+        <div class="card">
+            <div class="card-icon">💵</div>
+            <div class="card-info">
+                <div class="label">Total Income</div>
+                <div class="amount">${{ total_income }}</div>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-icon">💸</div>
+            <div class="card-info">
+                <div class="label">Total Expense</div>
+                <div class="amount">${{ total_expense }}</div>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-icon">🎯</div>
+            <div class="card-info">
+                <div class="label">Balance</div>
+                <div class="amount {% if balance >= 0 %}positive{% else %}negative{% endif %}">${{ balance }}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Section -->
+    <div class="charts-section">
+        <div class="chart-container">
+            <h2>💳 Expense Distribution by Category</h2>
+            <canvas id="expenseChart"></canvas>
+        </div>
+
+        <div class="chart-container">
+            <h2>💰 Income Distribution by Category</h2>
+            <canvas id="incomeChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Detailed Tables -->
+    <div class="details-section">
+        <h2>📋 Detailed Breakdown</h2>
+
+        <div class="breakdown-grid">
+            <div class="breakdown-table">
+                <h3>Expense by Category</h3>
+                {% if expense_by_category %}
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Category</th>
+                                <th>Amount</th>
+                                <th>Percentage</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for exp in expense_by_category %}
+                            <tr>
+                                <td>{{ exp.category__emoji }} {{ exp.category__name }}</td>
+                                <td>${{ exp.total }}</td>
+                                <td>{% widthratio exp.total total_expense 100 %}%</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% else %}
+                    <p class="no-data">No expense data available</p>
+                {% endif %}
+            </div>
+
+            <div class="breakdown-table">
+                <h3>Income by Category</h3>
+                {% if income_by_category %}
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Category</th>
+                                <th>Amount</th>
+                                <th>Percentage</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for inc in income_by_category %}
+                            <tr>
+                                <td>{{ inc.category__emoji }} {{ inc.category__name }}</td>
+                                <td>${{ inc.total }}</td>
+                                <td>{% widthratio inc.total total_income 100 %}%</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% else %}
+                    <p class="no-data">No income data available</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="period-info">
+        <p>Report Period: <strong>{{ start_date }}</strong> to <strong>{{ end_date }}</strong></p>
+    </div>
+</div>
+
+<script>
+    const chartData = {{ chart_data|safe }};
+
+    // Expense Chart
+    if (chartData.expense_labels.length > 0) {
+        const expenseCtx = document.getElementById('expenseChart').getContext('2d');
+        new Chart(expenseCtx, {
+            type: 'doughnut',
+            data: {
+                labels: chartData.expense_labels,
+                datasets: [{
+                    data: chartData.expense_data,
+                    backgroundColor: chartData.expense_colors,
+                    borderColor: '#fff',
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        position: 'right',
+                        labels: {
+                            padding: 20,
+                            font: { size: 14, weight: 'bold' }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // Income Chart
+    if (chartData.income_labels.length > 0) {
+        const incomeCtx = document.getElementById('incomeChart').getContext('2d');
+        new Chart(incomeCtx, {
+            type: 'pie',
+            data: {
+                labels: chartData.income_labels,
+                datasets: [{
+                    data: chartData.income_data,
+                    backgroundColor: [
+                        '#667eea', '#764ba2', '#f093fb', '#4facfe',
+                        '#00f2fe', '#43e97b', '#fa709a', '#fee140'
+                    ],
+                    borderColor: '#fff',
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        position: 'right',
+                        labels: {
+                            padding: 20,
+                            font: { size: 14, weight: 'bold' }
+                        }
+                    }
+                }
+            }
+        });
+    }
+</script>
+
+<style>
+    .reports-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    h1 {
+        color: #2c3e50;
+        margin-bottom: 30px;
+    }
+
+    .filter-section {
+        background: white;
+        padding: 20px;
+        border-radius: 12px;
+        margin-bottom: 30px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 20px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+        flex-wrap: wrap;
+    }
+
+    .filter-buttons {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .summary-cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 20px;
+        margin-bottom: 30px;
+    }
+
+    .card {
+        background: white;
+        padding: 25px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+        animation: slideInUp 0.6s ease-out;
+    }
+
+    .card-icon {
+        font-size: 40px;
+        flex-shrink: 0;
+    }
+
+    .card-info {
+        flex: 1;
+    }
+
+    .label {
+        font-size: 13px;
+        color: #7f8c8d;
+        text-transform: uppercase;
+        margin-bottom: 5px;
+    }
+
+    .amount {
+        font-size: 28px;
+        font-weight: bold;
+        color: #2c3e50;
+    }
+
+    .amount.positive {
+        color: #27ae60;
+    }
+
+    .amount.negative {
+        color: #e74c3c;
+    }
+
+    .charts-section {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+        gap: 30px;
+        margin-bottom: 40px;
+    }
+
+    .chart-container {
+        background: white;
+        padding: 25px;
+        border-radius: 12px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+        animation: fadeIn 0.6s ease-out;
+    }
+
+    .chart-container h2 {
+        margin-bottom: 20px;
+        color: #2c3e50;
+        font-size: 18px;
+    }
+
+    .chart-container canvas {
+        max-height: 400px;
+    }
+
+    .details-section {
+        background: white;
+        padding: 25px;
+        border-radius: 12px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+        margin-bottom: 30px;
+        animation: fadeIn 0.6s ease-out;
+    }
+
+    .details-section h2 {
+        margin-bottom: 25px;
+        color: #2c3e50;
+    }
+
+    .breakdown-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 30px;
+    }
+
+    .breakdown-table h3 {
+        margin-bottom: 15px;
+        color: #2c3e50;
+        font-size: 16px;
+    }
+
+    .breakdown-table table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .breakdown-table thead {
+        background: #f8f9fa;
+        border-bottom: 2px solid #ecf0f1;
+    }
+
+    .breakdown-table th {
+        padding: 12px;
+        text-align: left;
+        font-weight: 600;
+        color: #2c3e50;
+        font-size: 13px;
+    }
+
+    .breakdown-table td {
+        padding: 12px;
+        border-bottom: 1px solid #ecf0f1;
+    }
+
+    .breakdown-table tr:hover {
+        background: #f8f9fa;
+    }
+
+    .no-data {
+        text-align: center;
+        color: #95a5a6;
+        padding: 30px;
+    }
+
+    .period-info {
+        text-align: center;
+        color: #7f8c8d;
+        margin-top: 30px;
+        font-size: 14px;
+    }
+
+    .btn-success {
+        background: #27ae60 !important;
+    }
+
+    .btn-success:hover {
+        background: #229954 !important;
+    }
+
+    @keyframes slideInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+        }
+        to {
+            opacity: 1;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .charts-section {
+            grid-template-columns: 1fr;
+        }
+
+        .breakdown-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .filter-section {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .filter-buttons {
+            flex-direction: column;
+        }
+
+        .filter-buttons .btn {
+            width: 100%;
+        }
+    }
+</style>
+{% endblock %}

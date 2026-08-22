@@ -1,0 +1,359 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Budgets - Expense Tracker{% endblock %}
+
+{% block content %}
+<div class="budgets-container">
+    <h1>📊 Budget Management</h1>
+
+    <!-- Add Budget Form -->
+    <div class="add-budget-section">
+        <div class="form-card">
+            <h2>Set New Budget</h2>
+            <form method="POST" class="budget-form">
+                {% csrf_token %}
+                
+                <div class="form-group">
+                    <label for="category">Category</label>
+                    <select name="category" id="category" required>
+                        <option value="">-- Select Category --</option>
+                        {% for cat in categories %}
+                        <option value="{{ cat.id }}">{{ cat.emoji }} {{ cat.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="amount">Budget Amount ($)</label>
+                    <input type="number" name="amount" id="amount" step="0.01" required min="0" placeholder="0.00">
+                </div>
+
+                <div class="form-group">
+                    <label for="frequency">Frequency</label>
+                    <select name="frequency" id="frequency">
+                        <option value="monthly">Monthly</option>
+                        <option value="yearly">Yearly</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="alert_threshold">Alert Threshold (%)</label>
+                    <input type="number" name="alert_threshold" id="alert_threshold" value="80" min="1" max="100">
+                    <small>Get alert when this % is spent</small>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-block">✓ Set Budget</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Current Budgets -->
+    <div class="budgets-list">
+        <h2>Current Month Budgets</h2>
+        {% if budgets %}
+            <div class="budgets-grid">
+                {% for item in budgets %}
+                <div class="budget-card budget-status-{{ item.status }}">
+                    <div class="budget-header">
+                        <div class="budget-emoji">{{ item.budget.category.emoji }}</div>
+                        <div class="budget-title">{{ item.budget.category.name }}</div>
+                    </div>
+
+                    <div class="budget-progress">
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: {{ item.percentage }}%; background-color: {{ item.budget.category.color }};"></div>
+                        </div>
+                        <div class="progress-text">
+                            <span class="percentage">{{ item.percentage }}%</span>
+                            <span class="spent">${{ item.spent }}/{{ item.budget.amount }}</span>
+                        </div>
+                    </div>
+
+                    <div class="budget-info">
+                        <div class="info-item">
+                            <span class="label">Budget:</span>
+                            <span class="value">${{ item.budget.amount }}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="label">Spent:</span>
+                            <span class="value spent">-${{ item.spent }}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="label">Remaining:</span>
+                            <span class="value remaining">${{ item.remaining }}</span>
+                        </div>
+                    </div>
+
+                    <div class="budget-status-badge status-{{ item.status }}">
+                        {% if item.status == 'critical' %}
+                            🔴 EXCEEDED
+                        {% elif item.status == 'warning' %}
+                            🟡 WARNING
+                        {% else %}
+                            🟢 ON TRACK
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="no-data">No budgets set yet. Create one to get started!</p>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+    .budgets-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    h1 {
+        color: #2c3e50;
+        margin-bottom: 30px;
+    }
+
+    .add-budget-section {
+        margin-bottom: 40px;
+    }
+
+    .form-card {
+        background: white;
+        padding: 25px;
+        border-radius: 12px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+    }
+
+    .form-card h2 {
+        color: #2c3e50;
+        margin-bottom: 20px;
+    }
+
+    .budget-form {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .form-group label {
+        font-weight: 600;
+        color: #2c3e50;
+    }
+
+    .form-group input,
+    .form-group select {
+        padding: 12px;
+        border: 2px solid #ecf0f1;
+        border-radius: 8px;
+        font-size: 14px;
+        transition: border-color 0.3s;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus {
+        outline: none;
+        border-color: #667eea;
+    }
+
+    .form-group small {
+        color: #95a5a6;
+        font-size: 12px;
+        margin-top: -5px;
+    }
+
+    .btn-block {
+        width: 100%;
+        grid-column: 1 / -1;
+    }
+
+    .budgets-list {
+        background: white;
+        padding: 25px;
+        border-radius: 12px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+    }
+
+    .budgets-list h2 {
+        color: #2c3e50;
+        margin-bottom: 25px;
+    }
+
+    .budgets-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 20px;
+    }
+
+    .budget-card {
+        padding: 20px;
+        border-radius: 12px;
+        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        border-left: 5px solid #667eea;
+        animation: fadeIn 0.6s ease-out;
+        transition: transform 0.3s, box-shadow 0.3s;
+    }
+
+    .budget-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+    }
+
+    .budget-status-critical {
+        border-left-color: #e74c3c;
+        background: linear-gradient(135deg, #ffe5e5 0%, #ffb3b3 100%);
+    }
+
+    .budget-status-warning {
+        border-left-color: #f39c12;
+        background: linear-gradient(135deg, #fff4e5 0%, #ffe6b3 100%);
+    }
+
+    .budget-status-safe {
+        border-left-color: #27ae60;
+        background: linear-gradient(135deg, #e5ffe5 0%, #b3ffb3 100%);
+    }
+
+    .budget-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 15px;
+    }
+
+    .budget-emoji {
+        font-size: 32px;
+    }
+
+    .budget-title {
+        font-size: 18px;
+        font-weight: 700;
+        color: #2c3e50;
+    }
+
+    .budget-progress {
+        margin-bottom: 15px;
+    }
+
+    .progress-bar {
+        height: 12px;
+        background: rgba(0, 0, 0, 0.1);
+        border-radius: 6px;
+        overflow: hidden;
+        margin-bottom: 10px;
+    }
+
+    .progress-fill {
+        height: 100%;
+        transition: width 0.3s ease-out;
+    }
+
+    .progress-text {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 13px;
+        font-weight: 600;
+    }
+
+    .percentage {
+        color: #2c3e50;
+    }
+
+    .spent {
+        color: #e74c3c;
+    }
+
+    .budget-info {
+        background: rgba(0, 0, 0, 0.05);
+        padding: 12px;
+        border-radius: 8px;
+        margin-bottom: 12px;
+        display: grid;
+        gap: 8px;
+    }
+
+    .info-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 14px;
+    }
+
+    .info-item .label {
+        color: #7f8c8d;
+        font-weight: 600;
+    }
+
+    .info-item .value {
+        color: #2c3e50;
+        font-weight: 700;
+    }
+
+    .info-item .value.spent {
+        color: #e74c3c;
+    }
+
+    .info-item .value.remaining {
+        color: #27ae60;
+    }
+
+    .budget-status-badge {
+        text-align: center;
+        padding: 8px;
+        border-radius: 6px;
+        font-weight: 700;
+        font-size: 13px;
+    }
+
+    .status-critical {
+        background: #e74c3c;
+        color: white;
+    }
+
+    .status-warning {
+        background: #f39c12;
+        color: white;
+    }
+
+    .status-safe {
+        background: #27ae60;
+        color: white;
+    }
+
+    .no-data {
+        text-align: center;
+        color: #95a5a6;
+        padding: 60px 20px;
+        font-size: 16px;
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @media (max-width: 768px) {
+        .budget-form {
+            grid-template-columns: 1fr;
+        }
+
+        .budgets-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}

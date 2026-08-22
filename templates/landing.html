@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Landing - Expense Tracker{% endblock %}
+
+{% block content %}
+<div class="landing-page">
+    <section class="hero">
+        <div class="hero-content">
+            <h1 class="hero-title">Master Your Finances with ExpenseTracker</h1>
+            <p class="hero-subtitle">Track income and expenses in real-time, set budgets, and achieve your financial goals</p>
+            <div class="hero-buttons">
+                {% if user.is_authenticated %}
+                <a href="{% url 'home' %}" class="btn btn-primary">Go to Dashboard</a>
+                {% else %}
+                <a href="{% url 'register' %}" class="btn btn-primary">Get Started</a>
+                <a href="{% url 'login' %}" class="btn btn-secondary">Sign In</a>
+                {% endif %}
+            </div>
+        </div>
+        <div class="hero-image">
+            <img src="{% static 'images/hero-finance.svg' %}" alt="Finance Management" onerror="this.style.display='none'">
+        </div>
+    </section>
+
+    <section class="features">
+        <h2>Why Choose ExpenseTracker?</h2>
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">💰</div>
+                <h3>Income & Expense Tracking</h3>
+                <p>Log your income and expenses with categories and emojis for easy identification</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">📊</div>
+                <h3>Smart Reports</h3>
+                <p>Visualize your spending with interactive pie charts and download PDF reports</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">📈</div>
+                <h3>Budget Management</h3>
+                <p>Set monthly and yearly budgets by category with real-time alerts</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🔔</div>
+                <h3>Smart Alerts</h3>
+                <p>Get notified when you're nearing or exceeding your budget limits</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">💡</div>
+                <h3>Money-Saving Tips</h3>
+                <p>Read daily motivational quotes and money-saving tips</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🔒</div>
+                <h3>Secure & Private</h3>
+                <p>Your financial data is secure with unique username and password protection</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="how-it-works">
+        <h2>How It Works</h2>
+        <div class="steps">
+            <div class="step">
+                <span class="step-number">1</span>
+                <h3>Sign Up</h3>
+                <p>Create your account with a unique username</p>
+            </div>
+            <div class="step">
+                <span class="step-number">2</span>
+                <h3>Add Transactions</h3>
+                <p>Log your income and expenses with categories</p>
+            </div>
+            <div class="step">
+                <span class="step-number">3</span>
+                <h3>Set Budgets</h3>
+                <p>Define budgets for each category</p>
+            </div>
+            <div class="step">
+                <span class="step-number">4</span>
+                <h3>Track & Analyze</h3>
+                <p>Monitor your spending and get insights</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="cta">
+        <h2>Ready to Take Control of Your Finances?</h2>
+        <p>Join thousands of users managing their money with ExpenseTracker</p>
+        {% if not user.is_authenticated %}
+        <a href="{% url 'register' %}" class="btn btn-primary btn-large">Sign Up Now</a>
+        {% endif %}
+    </section>
+</div>
+{% endblock %}

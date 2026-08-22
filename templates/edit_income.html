@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Edit Income - Expense Tracker{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <div class="form-card">
+        <h1>✏️ Edit Income</h1>
+        <p class="form-subtitle">Update your income transaction</p>
+
+        <form method="POST" class="transaction-form">
+            {% csrf_token %}
+            
+            <div class="form-group">
+                <label for="category">Category</label>
+                <select id="category" name="category" required>
+                    <option value="">-- Select Category --</option>
+                    {% for cat in categories %}
+                    <option value="{{ cat.id }}" {% if cat.id == income.category_id %}selected{% endif %}>{{ cat.emoji }} {{ cat.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="amount">Amount ($)</label>
+                <input type="number" id="amount" name="amount" step="0.01" required placeholder="0.00" min="0" value="{{ income.amount }}">
+            </div>
+
+            <div class="form-group">
+                <label for="date">Date</label>
+                <input type="date" id="date" name="date" required value="{{ income.date|date:'Y-m-d' }}">
+            </div>
+
+            <div class="form-group">
+                <label for="description">Description</label>
+                <textarea id="description" name="description" placeholder="Add a note (optional)" rows="4">{{ income.description }}</textarea>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-block">✓ Update Income</button>
+            <a href="{% url 'transactions' %}" class="btn btn-secondary btn-block">← Back</a>
+        </form>
+    </div>
+</div>
+{% endblock %}
